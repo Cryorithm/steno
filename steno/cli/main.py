@@ -26,14 +26,19 @@ Steno™ | CLI | Main
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# TODO: Apply the interface/implementation pattern used for TranscriptManager to
+#       ModelManager (or whatever we'll call it).
+# TODO: Add ClaudeClient
+# TODO: Add GeminiClient
+
 import click
 from steno.clients.openai import OpenAIClient
 
-# from steno.clients.claude import ClaudeClient  # TODO: Implement this.
-# from steno.clients.gemini import GeminiClient  # TODO: Implement this.
+# from steno.clients.claude import ClaudeClient
+# from steno.clients.gemini import GeminiClient
 from steno.managers.config import ConfigManager
 from steno.managers.log import LogManager
-from steno.managers.transcript import TranscriptManager
+from steno.managers.transcript.github import GitHubTranscriptManager
 
 
 @click.command()
@@ -77,10 +82,10 @@ from steno.managers.transcript import TranscriptManager
     help="Select the AI model to interact with.",
 )
 @click.option(
-    "--github-repo-path",
-    help="GitHub repository path for storing conversation logs.",
+    "--repo",
+    help="GitHub (or similar) repository for storing transcripts (e.g. 'foo/chats').",
 )
-def main(config_path, log_path, log_level, log_rotation, ai_model, repo_path):
+def main(config_path, log_path, log_level, log_rotation, ai_model, repo):
     # Initialize LogManager
     log_manager = LogManager(sink=log_path, level=log_level, rotation=log_rotation)
     log_manager.info("Application started", event="startup")
@@ -102,15 +107,15 @@ def main(config_path, log_path, log_level, log_rotation, ai_model, repo_path):
     log_manager.info("ConfigManager activated.", extra=config, event="startup")
 
     # Initialize TranscriptManager
-    transcript_manager = TranscriptManager(repo_path=repo_path)
+    transcript_manager = GitHubTranscriptManager(repo=repo)
 
     # AI Model Initialization
     ai_client = None
     if ai_model == "openai":
         ai_client = OpenAIClient()
-    # elif ai_model == "claude":  # TODO: Implement this.
+    # elif ai_model == "claude":
     #    ai_client = ClaudeClient()
-    # elif ai_model == "gemini":  # TODO: Implement this.
+    # elif ai_model == "gemini":
     #    ai_client = GeminiClient()
 
     if ai_client:
