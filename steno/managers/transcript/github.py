@@ -27,13 +27,14 @@ Steno™ | Managers | Transcript | GitHub
 # SOFTWARE.
 
 from steno.managers.transcript.base import TranscriptManager
-from github import Github, InputFileContent
+from github import Github
 import datetime
 
 
 class GitHubTranscriptManager(TranscriptManager):
     """
-    An implementation of TranscriptManager that logs conversations to a GitHub repository.
+    An implementation of TranscriptManager that logs conversations to a GitHub
+    repository.
     """
 
     def __init__(self, repo_path, token=None):
@@ -41,7 +42,8 @@ class GitHubTranscriptManager(TranscriptManager):
         Initializes the GitHubTranscriptManager with the GitHub repository.
 
         :param repo_path: Path to the GitHub repository (e.g., 'username/repo').
-        :param token: GitHub token for authentication (optional if token is set in environment).
+        :param token: GitHub token for authentication (optional if token is set in
+                      environment).
         """
         self.repo_path = repo_path
         self.token = token

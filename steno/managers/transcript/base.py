@@ -27,8 +27,6 @@ Steno™ | Managers | Transcript | Base
 # SOFTWARE.
 
 from abc import ABC, abstractmethod
-from github import Github, InputFileContent
-import datetime
 
 
 class TranscriptManager(ABC):
