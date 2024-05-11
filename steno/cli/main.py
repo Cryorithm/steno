@@ -28,8 +28,9 @@ Steno™ | CLI | Main
 
 import click
 from steno.clients.openai import OpenAIClient
-from steno.clients.claude import ClaudeClient
-from steno.clients.gemini import GeminiClient
+
+# from steno.clients.claude import ClaudeClient  # TODO: Implement this.
+# from steno.clients.gemini import GeminiClient  # TODO: Implement this.
 from steno.managers.config import ConfigManager
 from steno.managers.log import LogManager
 from steno.managers.transcript import TranscriptManager
@@ -107,10 +108,10 @@ def main(config_path, log_path, log_level, log_rotation, ai_model, repo_path):
     ai_client = None
     if ai_model == "openai":
         ai_client = OpenAIClient()
-    elif ai_model == "claude":
-        ai_client = ClaudeClient()
-    elif ai_model == "gemini":
-        ai_client = GeminiClient()
+    # elif ai_model == "claude":  # TODO: Implement this.
+    #    ai_client = ClaudeClient()
+    # elif ai_model == "gemini":  # TODO: Implement this.
+    #    ai_client = GeminiClient()
 
     if ai_client:
         prompt = click.prompt("Enter your prompt for the AI", type=str)
