@@ -26,12 +26,13 @@ Steno™ | CLI | Main
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
 import click
-
-# from steno.clients.openai import OpenAIClientWrapper
+from steno.clients.openai import OpenAIClient
+from steno.clients.claude import ClaudeClient
+from steno.clients.gemini import GeminiClient
 from steno.managers.config import ConfigManager
 from steno.managers.log import LogManager
+from steno.managers.transcript import TranscriptManager
 
 
 @click.command()
@@ -69,50 +70,53 @@ from steno.managers.log import LogManager
     envvar="STENO_LOG_ROTATION",
     help="Log rotation configuration for the log file.",
 )
-@click.option("--ticker", help="Stock ticker symbol.")
 @click.option(
-    "--destination",
-    type=click.Choice(["kafka", "log", "openai"]),
-    help="Destination system where signals will be sent.",
+    "--ai-model",
+    type=click.Choice(["openai", "claude", "gemini"], case_sensitive=False),
+    help="Select the AI model to interact with.",
 )
 @click.option(
-    "--kafka-bootstrap-servers",
-    help="Kafka bootstrap servers connection string.",
+    "--github-repo-path",
+    help="GitHub repository path for storing conversation logs.",
 )
-@click.option("--kafka-topic", help="Kafka topic where signals are sent.")
-def main(
-    config_path,
-    log_path,
-    log_level,
-    log_rotation,
-    ticker,
-    destination,
-    kafka_bootstrap_servers,
-    kafka_topic,
-):
-
+def main(config_path, log_path, log_level, log_rotation, ai_model, repo_path):
     # Initialize LogManager
     log_manager = LogManager(sink=log_path, level=log_level, rotation=log_rotation)
     log_manager.info("Application started", event="startup")
     log_manager.info(f"Log level set to {log_level}")
 
     # Initialize ConfigManager
+    #
+    # ConfigManager loads configurations in a prioritized order:
+    # 1. Default Configuration: Predefined settings in the application.
+    # 2. YAML Configuration: Settings loaded from a user-specified YAML file.
+    # 3. Environment Variables: Settings overridden by environment variables.
+    # 4. Command Line Arguments: Settings specified at runtime take highest precedence.
     config_manager = ConfigManager()
-
-    # Load configurations in predefined order
     config_manager.load_yaml(config_path)
     config_manager.load_env_vars()
-
-    # Prepare CLI arguments before passing them to update_from_cli
-    cli_args = {
-        "ticker": ticker,
-        "destination": destination,
-        "kafka_bootstrap_servers": kafka_bootstrap_servers,
-        "kafka_topic": kafka_topic,
-    }
+    cli_args = {}  # Keep this just in case we need it later.
     config_manager.update_from_cli(cli_args)
     config = config_manager.get_config()  # Returns the final version of the config.
     log_manager.info("ConfigManager activated.", extra=config, event="startup")
+
+    # Initialize TranscriptManager
+    transcript_manager = TranscriptManager(repo_path=repo_path)
+
+    # AI Model Initialization
+    ai_client = None
+    if ai_model == "openai":
+        ai_client = OpenAIClient()
+    elif ai_model == "claude":
+        ai_client = ClaudeClient()
+    elif ai_model == "gemini":
+        ai_client = GeminiClient()
+
+    if ai_client:
+        prompt = click.prompt("Enter your prompt for the AI", type=str)
+        response = ai_client.get_response(prompt)
+        log_manager.info(f"Received response: {response}")
+        transcript_manager.log_conversation(prompt, response)
 
 
 if __name__ == "__main__":

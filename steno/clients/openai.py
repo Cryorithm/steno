@@ -41,7 +41,7 @@ class LLMClient:
     pass
 
 
-class OpenAIClientWrapper(LLMClient):
+class OpenAIClient(LLMClient):
     def __init__(self, api_key: str):
         if not api_key:
             raise ValueError("API key must be provided")

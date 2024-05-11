@@ -28,14 +28,14 @@ Tests for steno/clients/openai.py
 
 # import pytest
 
-from steno.clients.openai import OpenAIClientWrapper  # Assuming this is the path
+from steno.clients.openai import OpenAIClient  # Assuming this is the path
 
 
 def test_openai_client_init_with_key():
     """Test OpenAI client initialization with a provided API key"""
     api_key = "YOUR_API_KEY"  # Replace with your actual API key
-    client = OpenAIClientWrapper(api_key=api_key)
+    client = OpenAIClient(api_key=api_key)
     assert isinstance(
         client,
-        OpenAIClientWrapper,
+        OpenAIClient,
     )  # Check if the object is of the expected class
