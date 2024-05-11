@@ -37,18 +37,18 @@ class GitHubTranscriptManager(TranscriptManager):
     repository.
     """
 
-    def __init__(self, repo_path, token=None):
+    def __init__(self, repo, token=None):
         """
         Initializes the GitHubTranscriptManager with the GitHub repository.
 
-        :param repo_path: Path to the GitHub repository (e.g., 'username/repo').
+        :param repo: Path to the GitHub repository (e.g., 'username/repo').
         :param token: GitHub token for authentication (optional if token is set in
                       environment).
         """
-        self.repo_path = repo_path
+        self.repo = repo
         self.token = token
         self.github = Github(self.token)
-        self.repo = self.github.get_repo(self.repo_path)
+        self.repo = self.github.get_repo(self.repo)
 
     def log_conversation(self, prompt, response):
         """

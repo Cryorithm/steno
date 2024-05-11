@@ -30,6 +30,7 @@ Steno™ | CLI | Main
 #       ModelManager (or whatever we'll call it).
 # TODO: Add ClaudeClient
 # TODO: Add GeminiClient
+# TODO: Add some kind of object oriented fix to the AI functions.
 
 import click
 from steno.clients.openai import OpenAIClient
@@ -77,15 +78,18 @@ from steno.managers.transcript.github import GitHubTranscriptManager
     help="Log rotation configuration for the log file.",
 )
 @click.option(
-    "--ai-model",
-    type=click.Choice(["openai", "claude", "gemini"], case_sensitive=False),
-    help="Select the AI model to interact with.",
+    "--ai",
+    help=("Specify the AI model in the format 'service:model'. "
+          "Examples: 'openai:gpt-4', 'openai:gpt-3.5-turbo-16k', "
+          "'openai:gpt-4-turbo'.")
 )
+
 @click.option(
     "--repo",
-    help="GitHub (or similar) repository for storing transcripts (e.g. 'foo/chats').",
+    help=("GitHub or similar repository for storing transcripts "
+          "(e.g., 'username/repository').")
 )
-def main(config_path, log_path, log_level, log_rotation, ai_model, repo):
+def main(config_path, log_path, log_level, log_rotation, ai, repo):
     # Initialize LogManager
     log_manager = LogManager(sink=log_path, level=log_level, rotation=log_rotation)
     log_manager.info("Application started", event="startup")
@@ -101,7 +105,10 @@ def main(config_path, log_path, log_level, log_rotation, ai_model, repo):
     config_manager = ConfigManager()
     config_manager.load_yaml(config_path)
     config_manager.load_env_vars()
-    cli_args = {}  # Keep this just in case we need it later.
+    cli_args = {
+        'ai': ai,
+        'repo': repo,
+    }  # Keep this just in case we need it later.
     config_manager.update_from_cli(cli_args)
     config = config_manager.get_config()  # Returns the final version of the config.
     log_manager.info("ConfigManager activated.", extra=config, event="startup")
@@ -109,6 +116,43 @@ def main(config_path, log_path, log_level, log_rotation, ai_model, repo):
     # Initialize TranscriptManager
     transcript_manager = GitHubTranscriptManager(repo=repo)
 
+    # Handle the user's AI selection.
+    try:
+        service, model = ai.split(':')
+        assert service and model  # Ensure both parts are not empty
+        setup_model(service, model)
+    except (ValueError, AssertionError):
+        click.echo("Error: The --ai option must be in the format 'service:model'.")
+
+
+def setup_model(service, model):
+    if service == "openai":
+        setup_openai_model(model)
+    else:
+        click.echo(f"Unsupported AI service: {service}")
+
+
+def setup_openai_model(model):
+    if model == "gpt-4":
+        # Initialize OpenAI GPT-4
+        print("Setting up OpenAI GPT-4...")
+    elif model == "gpt-3.5":
+        # Initialize OpenAI GPT-3.5
+        print("Setting up OpenAI GPT-3.5...")
+    elif model == "gpt-4-turbo":
+        # Initialize OpenAI GPT-4 Turbo
+        print("Setting up OpenAI GPT-4 Turbo...")
+    elif model == "gpt-3.5-turbo":
+        # Initialize OpenAI GPT-3.5 Turbo (hypothetical, as of now not an actual model)
+        print("Setting up OpenAI GPT-3.5 Turbo...")
+    else:
+        click.echo(f"Unsupported model for OpenAI: {model}")
+
+
+if __name__ == "__main__":
+    main()
+
+"""
     # AI Model Initialization
     ai_client = None
     if ai_model == "openai":
@@ -123,7 +167,4 @@ def main(config_path, log_path, log_level, log_rotation, ai_model, repo):
         response = ai_client.get_response(prompt)
         log_manager.info(f"Received response: {response}")
         transcript_manager.log_conversation(prompt, response)
-
-
-if __name__ == "__main__":
-    main()
+"""

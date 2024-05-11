@@ -42,7 +42,7 @@ class LogManager:
             rotation (str, optional): Log rotation configuration for the log file
                 (default: '10 MB').
         """
-        self.level = (level,)
+        self.level = level
         self._sink = sink  # Use _ for private attributes
         self._rotation = rotation
 

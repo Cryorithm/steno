@@ -23,7 +23,7 @@ flake8 = "^7.0.0"
 yamlfix = "^1.16.0"
 
 [tool.poetry.scripts]
-steno = "steno.cli:main"
+steno = "steno.cli.main:main"
 
 [build-system]
 requires = ["poetry-core"]
