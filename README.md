@@ -12,14 +12,14 @@ facilitate this process.
 
 Here's a step-by-step guide on what commands to run and in what order:
 
-### Step 1: Install Python
+### Step 1: Install Python3, pip, pipx
 
 Ensure Python is installed on your Ubuntu system. If not, you can install it along
-with `pip` (Python’s package installer):
+with `pipx`:
 
 ```bash
 sudo apt update
-sudo apt install python3 python3-pip
+sudo apt install python3 python3-pip pipx
 ```
 
 ### Step 2: Install Poetry
@@ -28,9 +28,7 @@ Poetry is not typically included by default on Ubuntu, so you would need to inst
 it. You can do this by running the following command:
 
 ```bash
-curl -sSL \
-https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py \
-| python3 -
+pipx install poetry
 ```
 
 ### Step 3: Activate the Poetry environment
