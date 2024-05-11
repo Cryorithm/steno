@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "steno"
+version = "0.1.0"
+description = "Steno™ - AI Chat Recorder"
+authors = ["Joshua M. Dotson <contact@cryorithm.org>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+yfinance = "^0.2.38"
+openai = "^1.25.2"
+confluent-kafka = "^2.3.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+pytest = "^8.2.0"
+pytest-asyncio = "^0.23.6"
+pre-commit = "^3.7.0"
+pre-commit-hooks = "^4.6.0"
+pytest-coverage = "^0.0"
+flake8 = "^7.0.0"
+yamlfix = "^1.16.0"
+
+[tool.poetry.scripts]
+steno = "steno.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
