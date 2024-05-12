@@ -182,15 +182,11 @@ class ConfigManager:
             cli_args (dict): A dictionary of command-line arguments where keys match
                              the config keys.
         """
-        filtered_cli_args = {
-            "ai": {},
-            "repo": {},
-        }
         if "ai_model" in cli_args and cli_args["ai_model"] is not None:
-            filtered_cli_args["ai"]["model"] = cli_args["ai_model"]
-        if "repo_id" in cli_args and cli_args["repo_id"] is not None:
-            filtered_cli_args["repo"]["id"] = cli_args["repo_id"]
-        self.config.update(filtered_cli_args)
+            self.config['ai']['model'] = cli_args['ai_model']
+        if "repo_id" in cli_args and cli_args['repo_id'] is not None:
+            self.config['repo']['id'] = cli_args['repo_id']
+
 
     def validate_config(self, config, schema, stage):
         """

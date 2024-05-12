@@ -114,7 +114,7 @@ def main(config_path, log_path, log_level, log_rotation, ai_model, repo_id):
     # NOTE: All secrets MUST be in the config file as they will not be loaded from
     #       elsewhere due to security concerns.
     config_manager = ConfigManager(log_manager)
-    config_manager.load_yaml(config_path)
+    config_manager.load_yaml_and_validate(config_path)
     config_manager.load_env_vars()
     cli_args = {
         "ai": {
