@@ -30,7 +30,7 @@ from loguru import logger
 
 
 class LogManager:
-    def __init__(self, sink=None, level="DEBUG", rotation="10 MB"):
+    def __init__(self, sink=None, level="DEBUG", rotation="10 MB", serialize=True):
         """
         Initializes the LogManager with logging configuration.
 
@@ -42,14 +42,19 @@ class LogManager:
             rotation (str, optional): Log rotation configuration for the log file
                 (default: '10 MB').
         """
-        self.level = (level,)
+        self.level = level
         self._sink = sink  # Use _ for private attributes
         self._rotation = rotation
+        self._serialize = serialize
 
         if self._sink:
-            logger.add(sink=self._sink, level=self.level, rotation=self._rotation)
-        else:
-            logger.add(level=self.level)
+            logger.add(
+                sink=self._sink,
+                level=self.level,
+                rotation=self._rotation,
+                serialize=self._serialize,
+                colorize=False,
+            )
 
         logger.info("LogManager activated.", extra=self.get_config(), event="startup")
 
@@ -61,6 +66,7 @@ class LogManager:
             "level": self.level,
             "sink": self._sink,
             "rotation": self._rotation,
+            "serialize": self._serialize,
         }
 
     def debug(self, message, *args, **kwargs):

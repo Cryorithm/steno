@@ -26,14 +26,26 @@ Steno™ | CLI | Main
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# TODO: Apply the interface/implementation pattern used for TranscriptManager to
+#       ModelManager (or whatever we'll call it).
+# TODO: Add ClaudeClient
+# TODO: Add GeminiClient
+# TODO: Add some kind of object oriented fix to the AI functions.
 
 import click
+from loguru import logger
 
-# from steno.clients.openai import OpenAIClientWrapper
+# from steno.clients.openai import OpenAIClient
+
+# from steno.clients.claude import ClaudeClient
+# from steno.clients.gemini import GeminiClient
 from steno.managers.config import ConfigManager
 from steno.managers.log import LogManager
 
+from steno.managers.transcript.github import GitHubTranscriptManager
 
+
+@logger.catch
 @click.command()
 @click.option(
     "--config-path",
@@ -69,51 +81,103 @@ from steno.managers.log import LogManager
     envvar="STENO_LOG_ROTATION",
     help="Log rotation configuration for the log file.",
 )
-@click.option("--ticker", help="Stock ticker symbol.")
 @click.option(
-    "--destination",
-    type=click.Choice(["kafka", "log", "openai"]),
-    help="Destination system where signals will be sent.",
+    "--ai",
+    help=(
+        "Specify the AI model in the format 'service:model'. "
+        "Examples: 'openai:gpt-4', 'openai:gpt-3.5-turbo-16k', "
+        "'openai:gpt-4-turbo'."
+    ),
 )
 @click.option(
-    "--kafka-bootstrap-servers",
-    help="Kafka bootstrap servers connection string.",
+    "--repo",
+    help=(
+        "GitHub or similar repository for storing transcripts "
+        "(e.g., 'username/repository')."
+    ),
 )
-@click.option("--kafka-topic", help="Kafka topic where signals are sent.")
-def main(
-    config_path,
-    log_path,
-    log_level,
-    log_rotation,
-    ticker,
-    destination,
-    kafka_bootstrap_servers,
-    kafka_topic,
-):
-
+def main(config_path, log_path, log_level, log_rotation, ai, repo):
     # Initialize LogManager
     log_manager = LogManager(sink=log_path, level=log_level, rotation=log_rotation)
-    log_manager.info("Application started", event="startup")
+    log_manager.info("Application started.", event="startup")
     log_manager.info(f"Log level set to {log_level}")
 
     # Initialize ConfigManager
-    config_manager = ConfigManager()
-
-    # Load configurations in predefined order
+    #
+    # ConfigManager loads configurations in a prioritized order:
+    # 1. Default Configuration: Predefined settings in the application.
+    # 2. YAML Configuration: Settings loaded from a user-specified YAML file.
+    # 3. Environment Variables: Settings overridden by environment variables.
+    # 4. Command Line Arguments: Settings specified at runtime take highest precedence.
+    #
+    # NOTE: All secrets MUST be in the config file as they will not be loaded from
+    #       elsewhere.
+    config_manager = ConfigManager(log_manager)
     config_manager.load_yaml(config_path)
     config_manager.load_env_vars()
-
-    # Prepare CLI arguments before passing them to update_from_cli
     cli_args = {
-        "ticker": ticker,
-        "destination": destination,
-        "kafka_bootstrap_servers": kafka_bootstrap_servers,
-        "kafka_topic": kafka_topic,
+        "ai": ai,
+        "repo": repo,
     }
     config_manager.update_from_cli(cli_args)
+    config_manager.validate_config()
     config = config_manager.get_config()  # Returns the final version of the config.
     log_manager.info("ConfigManager activated.", extra=config, event="startup")
+
+    # Initialize TranscriptManager
+    transcript_manager = GitHubTranscriptManager(
+        log_manager=log_manager,
+        repo=config["repo"],
+        token=github_token,
+    )
+
+    # Handle the user's AI selection.
+    try:
+        service, model = config["ai"].split(":")
+        assert service and model  # Ensure both parts are not empty
+        setup_model(service, model, log_manager)
+    except (ValueError, AssertionError):
+        log_manager.error(
+            "Error: The --ai option must be in the format 'service:model'.",
+        )
+
+
+def setup_model(service, model, log_manager):
+    if service == "openai":
+        setup_openai_model(model, log_manager)
+    else:
+        log_manager.error(f"Unsupported AI service: {service}")
+
+
+def setup_openai_model(model, log_manager):
+    if model == "gpt-4":
+        log_manager.info("Setting up OpenAI GPT-4...")
+    elif model == "gpt-3.5":
+        log_manager.info("Setting up OpenAI GPT-3.5...")
+    elif model == "gpt-4-turbo":
+        log_manager.info("Setting up OpenAI GPT-4 Turbo...")
+    elif model == "gpt-3.5-turbo":
+        log_manager.info("Setting up OpenAI GPT-3.5 Turbo...")
+    else:
+        log_manager.error(f"Unsupported model for OpenAI: {model}")
 
 
 if __name__ == "__main__":
     main()
+
+"""
+    # AI Model Initialization
+    ai_client = None
+    if ai_model == "openai":
+        ai_client = OpenAIClient()
+    # elif ai_model == "claude":
+    #    ai_client = ClaudeClient()
+    # elif ai_model == "gemini":
+    #    ai_client = GeminiClient()
+
+    if ai_client:
+        prompt = click.prompt("Enter your prompt for the AI", type=str)
+        response = ai_client.get_response(prompt)
+        log_manager.info(f"Received response: {response}")
+        transcript_manager.log_conversation(prompt, response)
+"""
