@@ -11,7 +11,7 @@ facilitate this process.
 
 Here's a step-by-step guide on what commands to run and in what order:
 
-### Step 1: Install Python3, pip, pipx
+#### Step 1: Install Python3, pip, pipx
 
 Ensure Python is installed on your Ubuntu system. If not, you can install it along
 with `pipx`:
@@ -21,7 +21,7 @@ sudo apt update
 sudo apt install python3 python3-pip pipx
 ```
 
-### Step 2: Install Poetry
+#### Step 2: Install Poetry
 
 Poetry is not typically included by default on Ubuntu, so you would need to install
 it. You can do this by running the following command:
@@ -30,19 +30,19 @@ it. You can do this by running the following command:
 pipx install poetry
 ```
 
-### Step 3: Activate the Poetry environment
+#### Step 3: Activate the Poetry environment
 
 ```bash
 make shell
 ```
 
-### Step 4: Install project dependencies
+#### Step 4: Install project dependencies
 
 ```bash
 make install
 ```
 
-### Step 5: Install Project Dependencies and Set Up the Environment
+#### Step 5: Install Project Dependencies and Set Up the Environment
 
 This can typically be achieved by running `poetry install`, but since we use a
 `Makefile`, the process can be initiated by:
@@ -51,7 +51,7 @@ This can typically be achieved by running `poetry install`, but since we use a
 make update
 ```
 
-### Step 6: Install Pre-commit Hooks
+#### Step 6: Install Pre-commit Hooks
 
 After installing the pre-commit package, install the actual hooks configured for the
 project:
@@ -60,7 +60,7 @@ project:
 make install-precommit
 ```
 
-### Step 7: Run Initial Checks
+#### Step 7: Run Initial Checks
 To ensure everything is configured correctly (e.g., linters, formatters, and tests),
 run:
 
@@ -71,7 +71,7 @@ make check
 
 ## 2. Setting Up a Dedicated GitHub Repository and Token
 
-### Step 1: Create a Dedicated Repository
+#### Step 1: Create a Dedicated Repository
 
 - Log into your GitHub account.
 - Click the **New** button on the repository page or navigate directly to [Create a new repository](https://github.com/new).
@@ -79,7 +79,7 @@ make check
 - Choose whether the repository should be public or private. A private repository is recommended for sensitive information.
 - Initialize the repository with a README to help describe the purpose and setup of the repository.
 
-### Step 2: Generate a Personal Access Token
+#### Step 2: Generate a Personal Access Token
 
 - After logging in to GitHub, click on your profile photo in the upper-right corner and select **Settings**.
 - In the sidebar, select **Developer settings**.
@@ -97,7 +97,7 @@ To ensure Steno operates correctly with your GitHub repository, it's essential t
 
 Ensure you select only the permissions that are necessary for the operations Steno needs to perform. This adherence to the principle of least privilege helps maintain the security of your repository.
 
-### Step 3: Copy and Secure the Token
+#### Step 3: Copy and Secure the Token
 
 - After selecting the permissions, scroll down and click **Generate token**.
 - Make sure to copy your new personal access token. GitHub will show you the token only once. If you lose it, you will have to regenerate a new one.
@@ -112,7 +112,7 @@ Ensure you select only the permissions that are necessary for the operations Ste
 
 ## 3. Configuring Steno
 
-### Step 1: Create Configuration File
+#### Step 1: Create Configuration File
 
 To configure Steno for your environment, you'll start by setting up the configuration file from a provided template. Here’s how to do it:
 
@@ -143,7 +143,7 @@ To configure Steno for your environment, you'll start by setting up the configur
    - `repository`: Input your GitHub repository path and authentication token.
    - `logging`: Set your preferred logging path, level, and rotation.
 
-### Step 2: Secure the Configuration File
+#### Step 2: Secure the Configuration File
 
 After configuring `steno.yaml`, ensure the file is secured since it may contain sensitive information like your GitHub token:
 
