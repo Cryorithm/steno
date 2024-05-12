@@ -79,7 +79,7 @@ make check
 - Choose whether the repository should be public or private. A private repository is recommended for sensitive information.
 - Initialize the repository with a README to help describe the purpose and setup of the repository.
 
-### Step 2: Generate a Personal Access Token**:
+### Step 2: Generate a Personal Access Token
 
 - After logging in to GitHub, click on your profile photo in the upper-right corner and select **Settings**.
 - In the sidebar, select **Developer settings**.
@@ -111,8 +111,6 @@ Ensure you select only the permissions that are necessary for the operations Ste
 
 
 ## 3. Configuring Steno
-
-Certainly! Below is the revised section for your `README.md` that focuses on setting up and securing the configuration file for Steno, excluding advice on environment variables.
 
 ### Step 1: Create Configuration File
 
