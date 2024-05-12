@@ -43,7 +43,7 @@ from loguru import logger
 from steno.managers.config import ConfigManager
 from steno.managers.log import LogManager
 
-from steno.managers.transcript.github import GitHubTranscriptManager
+# from steno.managers.transcript.github import GitHubTranscriptManager
 
 
 @logger.catch
@@ -117,11 +117,11 @@ def main(config_path, log_path, log_level, log_rotation, ai_model, repo_id):
     config_manager.load_yaml(config_path)
     config_manager.load_env_vars()
     cli_args = {
-        'ai': {
-            'model': ai_model,
+        "ai": {
+            "model": ai_model,
         },
-        'repo': {
-            'id': repo_id,
+        "repo": {
+            "id": repo_id,
         },
     }
     config_manager.integrate_and_validate_all_configs(cli_args)
@@ -129,15 +129,15 @@ def main(config_path, log_path, log_level, log_rotation, ai_model, repo_id):
     log_manager.debug("ConfigManager activated.", extra=config, event="startup")
 
     # Initialize TranscriptManager
-    transcript_manager = GitHubTranscriptManager(
-        log_manager=log_manager,
-        repo=config['repo']['id'],
-        token=config['repo']['token'],
-    )
+    # transcript_manager = GitHubTranscriptManager(
+    #    log_manager=log_manager,
+    #    repo=config["repo"]["id"],
+    #    token=config["repo"]["token"],
+    # )
 
     # Handle the user's AI selection.
     try:
-        service, model = config['ai']['model'].split(":")
+        service, model = config["ai"]["model"].split(":")
         assert service and model  # Ensure both parts are not empty
         setup_model(service, model, log_manager)
     except (ValueError, AssertionError):

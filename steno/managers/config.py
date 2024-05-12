@@ -31,15 +31,15 @@ import os
 import yaml
 from pathlib import Path
 
-import jsonschema
+from jsonschema import validate, ValidationError
 
 
 class ConfigManager:
     def __init__(self, log_manager):
         self.log_manager = log_manager
         self.config = {  # NOTE: Some settings should NOT have defaults.
-            'ai': {
-                'model': 'openai:gpt-3.5',
+            "ai": {
+                "model": "openai:gpt-3.5",
             },
         }
 
@@ -57,20 +57,20 @@ class ConfigManager:
                         "tokens": {
                             "type": "object",
                             "properties": {
-                                "openai": {"type": "string", "minLength": 1}
+                                "openai": {"type": "string", "minLength": 1},
                             },
-                            "anyOf": [{"required": ["openai"]}]
-                        }
+                            "anyOf": [{"required": ["openai"]}],
+                        },
                     },
-                    "required": ["tokens"]
+                    "required": ["tokens"],
                 },
                 "repo": {
                     "type": "object",
                     "properties": {
                         "id": {"type": "string"},
-                        "token": {"type": "string"}
+                        "token": {"type": "string"},
                     },
-                    "required": ["token"]
+                    "required": ["token"],
                 },
                 "log": {
                     "type": "object",
@@ -78,14 +78,14 @@ class ConfigManager:
                         "path": {"type": "string", "pattern": "^.+\\.log$"},
                         "level": {
                             "type": "string",
-                            "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+                            "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                         },
-                        "rotation": {"type": "string"}
+                        "rotation": {"type": "string"},
                     },
-                    "required": []
-                }
+                    "required": [],
+                },
             },
-            "required": ["ai", "repo"]
+            "required": ["ai", "repo"],
         }
 
     def get_final_schema(self):
@@ -95,9 +95,9 @@ class ConfigManager:
         """
         schema = self.get_yaml_schema()
         schema = copy.deepcopy(schema)
-        schema['properties']['ai']['required'] = ["model", "tokens"]
-        schema['properties']['repo']['required'] = ["id", "token"]
-        schema['properties']['log']['required'] = ["path", "level", "rotation"]
+        schema["properties"]["ai"]["required"] = ["model", "tokens"]
+        schema["properties"]["repo"]["required"] = ["id", "token"]
+        schema["properties"]["log"]["required"] = ["path", "level", "rotation"]
         return schema
 
     def integrate_and_validate_all_configs(self, cli_args):
@@ -133,7 +133,7 @@ class ConfigManager:
         """
         # Integrate environment variables
         self.load_env_vars()
-        
+
         # Update from CLI arguments
         self.update_from_cli(cli_args)
 
@@ -157,7 +157,7 @@ class ConfigManager:
         except FileNotFoundError:
             self.log_manager.info(
                 f"YAML configuration file not found at {resolved_path}."
-                "Using defaults."
+                "Using defaults.",
             )
         except yaml.YAMLError as exc:
             self.log_manager.error(f"Error parsing YAML file: {exc}")
@@ -166,13 +166,13 @@ class ConfigManager:
         """
         Load configuration settings from environment variables prefixed with 'STENO_'.
         """
-        ai_model = os.getenv('STENO_AI_MODEL')
+        ai_model = os.getenv("STENO_AI_MODEL")
         if ai_model:
-            self.config['ai']['model'] = ai_model
-        
-        repo_id = os.getenv('STENO_REPO_ID')
+            self.config["ai"]["model"] = ai_model
+
+        repo_id = os.getenv("STENO_REPO_ID")
         if repo_id:
-            self.config['repo']['id'] = repo_id
+            self.config["repo"]["id"] = repo_id
 
     def update_from_cli(self, cli_args):
         """
@@ -183,13 +183,13 @@ class ConfigManager:
                              the config keys.
         """
         filtered_cli_args = {
-            'ai': {},
-            'repo': {},
+            "ai": {},
+            "repo": {},
         }
-        if 'ai_model' in cli_args and cli_args['ai_model'] is not None:
-            filtered_cli_args['ai']['model'] = cli_args['ai_model']
-        if 'repo_id' in cli_args and cli_args['repo_id'] is not None:
-            filtered_cli_args['repo']['id'] = cli_args['repo_id']
+        if "ai_model" in cli_args and cli_args["ai_model"] is not None:
+            filtered_cli_args["ai"]["model"] = cli_args["ai_model"]
+        if "repo_id" in cli_args and cli_args["repo_id"] is not None:
+            filtered_cli_args["repo"]["id"] = cli_args["repo_id"]
         self.config.update(filtered_cli_args)
 
     def validate_config(self, config, schema, stage):
@@ -206,7 +206,7 @@ class ConfigManager:
             self.log_manager.debug(f"{stage} configuration is valid.")
         except ValidationError as e:
             self.log_manager.error(
-                f"{stage} configuration validation error: {e.message}"
+                f"{stage} configuration validation error: {e.message}",
             )
             raise ValueError(f"{stage} configuration validation failed: {e.message}")
 
