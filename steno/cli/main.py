@@ -42,7 +42,7 @@ from loguru import logger
 from steno.managers.config import ConfigManager
 from steno.managers.log import LogManager
 
-# from steno.managers.transcript.github import GitHubTranscriptManager
+from steno.managers.transcript.github import GitHubTranscriptManager
 
 
 @logger.catch
@@ -109,6 +109,9 @@ def main(config_path, log_path, log_level, log_rotation, ai, repo):
     # 2. YAML Configuration: Settings loaded from a user-specified YAML file.
     # 3. Environment Variables: Settings overridden by environment variables.
     # 4. Command Line Arguments: Settings specified at runtime take highest precedence.
+    #
+    # NOTE: All secrets MUST be in the config file as they will not be loaded from
+    #       elsewhere.
     config_manager = ConfigManager(log_manager)
     config_manager.load_yaml(config_path)
     config_manager.load_env_vars()
@@ -122,39 +125,41 @@ def main(config_path, log_path, log_level, log_rotation, ai, repo):
     log_manager.info("ConfigManager activated.", extra=config, event="startup")
 
     # Initialize TranscriptManager
-    # transcript_manager = GitHubTranscriptManager(repo=config["repo"])
+    transcript_manager = GitHubTranscriptManager(
+        log_manager=log_manager,
+        repo=config["repo"],
+        token=github_token,
+    )
 
     # Handle the user's AI selection.
-    # try:
-    #    service, model = config["ai"].split(":")
-    #    assert service and model  # Ensure both parts are not empty
-    #    setup_model(service, model)
-    # except (ValueError, AssertionError):
-    #    click.echo("Error: The --ai option must be in the format 'service:model'.")
+    try:
+        service, model = config["ai"].split(":")
+        assert service and model  # Ensure both parts are not empty
+        setup_model(service, model, log_manager)
+    except (ValueError, AssertionError):
+        log_manager.error(
+            "Error: The --ai option must be in the format 'service:model'.",
+        )
 
 
-def setup_model(service, model):
+def setup_model(service, model, log_manager):
     if service == "openai":
-        setup_openai_model(model)
+        setup_openai_model(model, log_manager)
     else:
-        click.echo(f"Unsupported AI service: {service}")
+        log_manager.error(f"Unsupported AI service: {service}")
 
 
-def setup_openai_model(model):
+def setup_openai_model(model, log_manager):
     if model == "gpt-4":
-        # Initialize OpenAI GPT-4
-        print("Setting up OpenAI GPT-4...")
+        log_manager.info("Setting up OpenAI GPT-4...")
     elif model == "gpt-3.5":
-        # Initialize OpenAI GPT-3.5
-        print("Setting up OpenAI GPT-3.5...")
+        log_manager.info("Setting up OpenAI GPT-3.5...")
     elif model == "gpt-4-turbo":
-        # Initialize OpenAI GPT-4 Turbo
-        print("Setting up OpenAI GPT-4 Turbo...")
+        log_manager.info("Setting up OpenAI GPT-4 Turbo...")
     elif model == "gpt-3.5-turbo":
-        # Initialize OpenAI GPT-3.5 Turbo (hypothetical, as of now not an actual model)
-        print("Setting up OpenAI GPT-3.5 Turbo...")
+        log_manager.info("Setting up OpenAI GPT-3.5 Turbo...")
     else:
-        click.echo(f"Unsupported model for OpenAI: {model}")
+        log_manager.error(f"Unsupported model for OpenAI: {model}")
 
 
 if __name__ == "__main__":

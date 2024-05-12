@@ -58,7 +58,7 @@ class ConfigManager:
                 if config_data:
                     self.config.update(config_data)
         except FileNotFoundError:
-            self.log_manager.error(
+            self.log_manager.info(
                 f"YAML configuration file not found at {resolved_path}."
                 "Using defaults.",
             )

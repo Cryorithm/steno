@@ -26,9 +26,12 @@ Steno™ | Managers | Transcript | GitHub
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from steno.managers.transcript.base import TranscriptManager
-from github import Github
 import datetime
+import sys
+
+from github import Github, GithubException
+
+from steno.managers.transcript.base import TranscriptManager
 
 
 class GitHubTranscriptManager(TranscriptManager):
@@ -37,18 +40,24 @@ class GitHubTranscriptManager(TranscriptManager):
     repository.
     """
 
-    def __init__(self, repo, token):
+    def __init__(self, log_manager, repo, token):
         """
         Initializes the GitHubTranscriptManager with the GitHub repository.
 
         :param repo: Path to the GitHub repository (e.g., 'username/repo').
         :param token: GitHub token for authentication (optional if token is set in
                       environment).
+        :param log_manager: LogManager instance to handle logging.
         """
         self.repo = repo
         self.token = token
         self.github = Github(self.token)
-        self.repo = self.github.get_repo(self.repo)
+        try:
+            self.repo = self.github.get_repo(self.repo)
+            log_manager.info(f"Successfully connected to GitHub repository: {repo}")
+        except GithubException as e:
+            log_manager.error(f"Failed to access GitHub repository: {repo}. Error: {e}")
+            sys.exit(1)  # Exit the program if repository access fails
 
     def log_conversation(self, prompt, response):
         """
@@ -62,8 +71,9 @@ class GitHubTranscriptManager(TranscriptManager):
 
         try:
             self.repo.create_file(filename, "Log new conversation", content)
-        except Exception as e:
-            print(f"Failed to log conversation: {str(e)}")
+            self.log_manager.info("Conversation logged successfully.")
+        except GithubException as e:
+            self.log_manager.error(f"Failed to log conversation: {str(e)}")
 
     def _generate_conversation_content(self, prompt, response):
         """
