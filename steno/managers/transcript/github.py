@@ -37,7 +37,7 @@ class GitHubTranscriptManager(TranscriptManager):
     repository.
     """
 
-    def __init__(self, repo, token=None):
+    def __init__(self, repo, token):
         """
         Initializes the GitHubTranscriptManager with the GitHub repository.
 

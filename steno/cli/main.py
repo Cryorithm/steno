@@ -33,15 +33,19 @@ Steno™ | CLI | Main
 # TODO: Add some kind of object oriented fix to the AI functions.
 
 import click
-from steno.clients.openai import OpenAIClient
+from loguru import logger
+
+# from steno.clients.openai import OpenAIClient
 
 # from steno.clients.claude import ClaudeClient
 # from steno.clients.gemini import GeminiClient
 from steno.managers.config import ConfigManager
 from steno.managers.log import LogManager
-from steno.managers.transcript.github import GitHubTranscriptManager
+
+# from steno.managers.transcript.github import GitHubTranscriptManager
 
 
+@logger.catch
 @click.command()
 @click.option(
     "--config-path",
@@ -79,20 +83,23 @@ from steno.managers.transcript.github import GitHubTranscriptManager
 )
 @click.option(
     "--ai",
-    help=("Specify the AI model in the format 'service:model'. "
-          "Examples: 'openai:gpt-4', 'openai:gpt-3.5-turbo-16k', "
-          "'openai:gpt-4-turbo'.")
+    help=(
+        "Specify the AI model in the format 'service:model'. "
+        "Examples: 'openai:gpt-4', 'openai:gpt-3.5-turbo-16k', "
+        "'openai:gpt-4-turbo'."
+    ),
 )
-
 @click.option(
     "--repo",
-    help=("GitHub or similar repository for storing transcripts "
-          "(e.g., 'username/repository').")
+    help=(
+        "GitHub or similar repository for storing transcripts "
+        "(e.g., 'username/repository')."
+    ),
 )
 def main(config_path, log_path, log_level, log_rotation, ai, repo):
     # Initialize LogManager
     log_manager = LogManager(sink=log_path, level=log_level, rotation=log_rotation)
-    log_manager.info("Application started", event="startup")
+    log_manager.info("Application started.", event="startup")
     log_manager.info(f"Log level set to {log_level}")
 
     # Initialize ConfigManager
@@ -102,27 +109,28 @@ def main(config_path, log_path, log_level, log_rotation, ai, repo):
     # 2. YAML Configuration: Settings loaded from a user-specified YAML file.
     # 3. Environment Variables: Settings overridden by environment variables.
     # 4. Command Line Arguments: Settings specified at runtime take highest precedence.
-    config_manager = ConfigManager()
+    config_manager = ConfigManager(log_manager)
     config_manager.load_yaml(config_path)
     config_manager.load_env_vars()
     cli_args = {
-        'ai': ai,
-        'repo': repo,
-    }  # Keep this just in case we need it later.
+        "ai": ai,
+        "repo": repo,
+    }
     config_manager.update_from_cli(cli_args)
+    config_manager.validate_config()
     config = config_manager.get_config()  # Returns the final version of the config.
     log_manager.info("ConfigManager activated.", extra=config, event="startup")
 
     # Initialize TranscriptManager
-    transcript_manager = GitHubTranscriptManager(repo=repo)
+    # transcript_manager = GitHubTranscriptManager(repo=config["repo"])
 
     # Handle the user's AI selection.
-    try:
-        service, model = ai.split(':')
-        assert service and model  # Ensure both parts are not empty
-        setup_model(service, model)
-    except (ValueError, AssertionError):
-        click.echo("Error: The --ai option must be in the format 'service:model'.")
+    # try:
+    #    service, model = config["ai"].split(":")
+    #    assert service and model  # Ensure both parts are not empty
+    #    setup_model(service, model)
+    # except (ValueError, AssertionError):
+    #    click.echo("Error: The --ai option must be in the format 'service:model'.")
 
 
 def setup_model(service, model):

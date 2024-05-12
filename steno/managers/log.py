@@ -47,9 +47,14 @@ class LogManager:
         self._rotation = rotation
 
         if self._sink:
-            logger.add(sink=self._sink, level=self.level, rotation=self._rotation)
+            logger.add(
+                sink=self._sink,
+                level=self.level,
+                rotation=self._rotation,
+                serialize=True,
+            )
         else:
-            logger.add(level=self.level)
+            logger.add(level=self.level, serialize=True)
 
         logger.info("LogManager activated.", extra=self.get_config(), event="startup")
 
