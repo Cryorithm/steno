@@ -1,13 +1,13 @@
 ---
 steno:
   ai:
-    model: openai:gpt-3.5
+    model: "openai:gpt-3.5"
     tokens:
-      openai: YOUR_DEFAULT_TOKEN_FOR_OPENAI
+      openai: "YOUR_DEFAULT_TOKEN_FOR_OPENAI"
   repo:
-    path: username/username-steno-transcripts
-    token: YOUR_GITHUB_TOKEN_HERE
+    id: "username/username-steno-transcripts"
+    token: "YOUR_GITHUB_TOKEN_HERE"
   log:
-    path: steno.log
-    level: DEBUG
-    rotation: 10 MB
+    path: "steno.log"
+    level: "INFO"
+    rotation: "10 MB"
