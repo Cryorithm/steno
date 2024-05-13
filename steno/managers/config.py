@@ -35,17 +35,146 @@ from jsonschema import validate, ValidationError
 
 
 class ConfigManager:
-    def __init__(self, log_manager):
-        self.log_manager = log_manager
-        self.config = {  # NOTE: Some settings should NOT have defaults.
+    """
+    Manages the configuration of the application, loading settings in a prioritized
+    order:
+
+    1. Default Configuration: Predefined settings in the application.
+    2. YAML Configuration: Settings loaded from a user-specified YAML file.
+    3. Environment Variables: Settings overridden by environment variables.
+    4. Command Line Arguments: Settings specified at runtime take the highest precedence.
+
+    Secrets should not be loaded from external sources other than the config file for
+    security reasons.
+
+    Args:
+        ctx (dict): A Click-style context dictionary.
+        log_manager: A LogManager object.
+    """
+
+    def __init__(self, ctx, log_manager):
+        """
+        Initializes the ConfigManager with application context and a LogManager.
+
+        Args:
+            ctx (dict): A Click-style context dictionary.
+            log_manager: A LogManager object.
+        """
+        self.__ctx = ctx
+        self.__log_manager = log_manager
+
+        # Load defaults.
+        self.__load_defaults()
+
+        # Load configuration from YAML.
+        self.__load_yaml()
+
+        # Validate configuration after loading from YAML.
+        self.__validate_config(self.get_config(), self.__get_prep_schema(), "YAML")
+
+        # Load configuration from environment variables.
+        self.__load_env_vars()
+
+        # Validate configuration after loading from environment variables.
+        self.__validate_config(self.get_config(), self.__get_prep_schema(), "Env")
+
+        # Debug.
+        self.__debug()
+
+        # Load configuration from CLI arguments.
+        self.__load_cli_args()
+
+        # Debug.
+        self.__debug()
+
+        # Validate final configuration.
+        self.__validate_config(self.get_config(), self.__get_final_schema(), "Final")
+
+        # Report activated.
+        log_manager.debug(
+            "ConfigManager activated.",
+            extra=self.get_config(),
+            event="startup",
+        )
+
+    def get_config(self):
+        """
+        Get the current configuration dictionary.
+
+        Returns:
+            dict: The current configuration settings.
+        """
+        return self.__config
+
+    def __load_defaults(self):
+        """
+        Set a default config.
+
+        NOTE: Some settings should not have default values.
+        """
+        self.__config = {
             "ai": {
                 "model": "openai:gpt-3.5",
             },
         }
 
-    def get_yaml_schema(self):
+    def __debug(self):
+        """Print things that help debug configuration issues."""
+        things = {
+            'ctx': self.__ctx,
+            'config': self.get_config(),
+        }
+        print(
+            '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
+            yaml.dump(things, allow_unicode=True, default_flow_style=False)),
+            '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
+        )
+
+    def __load_yaml(self, path):
         """
-        Returns the base JSON schema used for initial YAML configuration validation.
+        Load configuration settings from a YAML file.
+
+        Args:
+            path (str): The path to the YAML file to be loaded.
+        """
+        resolved_path = Path(path).expanduser()
+        try:
+            with resolved_path.open("r") as f:
+                config_data = yaml.safe_load(f)
+                if config_data:
+                    self.__config.update(config_data)
+        except FileNotFoundError:
+            self.__log_manager.info(
+                f"YAML configuration file not found at {resolved_path}."
+                "Using defaults.",
+            )
+        except yaml.YAMLError as exc:
+            self.__log_manager.error(f"Error parsing YAML file: {exc}")
+
+    def __validate_config(self, schema, stage):
+        """
+        Validate the current configuration using JSON Schema.
+
+        Args:
+            config (dict): Configuration to validate.
+            schema (dict): One of yaml or final JSON schema dictionaries.
+            stage (str): Describes the stage at which validation is being performed.
+        """
+        try:
+            validate(instance=self.__config, schema=schema)
+            self.__log_manager.debug(f"{stage} configuration is valid.")
+        except ValidationError as e:
+            self.__log_manager.error(
+                f"{stage} configuration validation error: {e.message}",
+            )
+            raise ValueError(f"{stage} configuration validation failed: {e.message}")
+
+    def __get_prep_schema(self):
+        """
+        Returns the JSON Schema used to validate the early stages of activation.
+
+        TODO: Consider setting schemas during init so that this manager can be used in
+              other applications.
         """
         return {
             "type": "object",
@@ -88,129 +217,58 @@ class ConfigManager:
             "required": ["ai", "repo"],
         }
 
-    def get_final_schema(self):
+    def __get_final_schema(self):
         """
         Returns the modified JSON schema for final configuration validation after
         merging all sources.
         """
-        schema = self.get_yaml_schema()
+        schema = self.__get_prep_schema()
         schema = copy.deepcopy(schema)
         schema["properties"]["ai"]["required"] = ["model", "tokens"]
         schema["properties"]["repo"]["required"] = ["id", "token"]
         schema["properties"]["log"]["required"] = ["path", "level", "rotation"]
         return schema
 
-    def integrate_and_validate_all_configs(self, cli_args):
-        """
-        Integrates environment variables and command-line arguments into the existing
-        configuration, and validates the final combined configuration. This method
-        ensures that the configuration is complete and valid after all potential
-        sources have been considered.
-
-        This process involves three main steps:
-        1. Loading and applying environment variables that might override existing
-           configuration settings.
-        2. Updating the configuration with any command-line arguments provided at
-           runtime, which take precedence over all other sources.
-        3. Validating the final configuration using a predefined JSON schema to ensure
-           all required settings are correctly specified and that the configuration
-           adheres to expected standards.
-
-        Args:
-            cli_args (dict): A dictionary containing command-line arguments. These
-                             arguments are expected to align with the keys in the
-                             configuration dictionary and provide the final layer of
-                             configuration values.
-
-        Raises:
-            ValueError: If the final configuration does not validate against the JSON
-                        schema, indicating that some required settings are missing or
-                        malformed.
-
-        This method is critical for ensuring the application is correctly configured
-        before proceeding with operation, thereby preventing runtime errors due to
-        configuration issues.
-        """
-        # Integrate environment variables
-        self.load_env_vars()
-
-        # Update from CLI arguments
-        self.update_from_cli(cli_args)
-
-        # Validate final configuration
-        self.validate_config(self.config, self.get_final_schema(), "Final")
-
-    def load_yaml_and_validate(self, path):
-        """
-        Load configuration settings from a YAML file and validate them to the schema.
-
-        Args:
-            path (str): The path to the YAML file to be loaded.
-        """
-        resolved_path = Path(path).expanduser()
-        try:
-            with resolved_path.open("r") as f:
-                config_data = yaml.safe_load(f)
-                if config_data:
-                    self.config.update(config_data)
-            self.validate_config(self.config, self.get_yaml_schema(), "YAML")
-        except FileNotFoundError:
-            self.log_manager.info(
-                f"YAML configuration file not found at {resolved_path}."
-                "Using defaults.",
-            )
-        except yaml.YAMLError as exc:
-            self.log_manager.error(f"Error parsing YAML file: {exc}")
-
-    def load_env_vars(self):
+    def __load_env_vars(self):
         """
         Load configuration settings from environment variables prefixed with 'STENO_'.
         """
         ai_model = os.getenv("STENO_AI_MODEL")
         if ai_model:
-            self.config["ai"]["model"] = ai_model
+            self.__config["ai"]["model"] = ai_model
 
         repo_id = os.getenv("STENO_REPO_ID")
         if repo_id:
-            self.config["repo"]["id"] = repo_id
+            self.__config["repo"]["id"] = repo_id
 
-    def update_from_cli(self, cli_args):
+    def __load_cli_args(self):
         """
-        Update configuration settings from command-line arguments.
+        Loads command line arguments from the Click context and carefully updates the
+        configuration of ConfigManager.
+        """
+        # Fetch CLI arguments using context
+        ai_model = self.__ctx.params.get('ai_model')
+        repo_id = self.__ctx.params.get('repo_id')
+
+        # Set these values in the configuration if they are provided
+        if ai_model:
+            self.__set_config_value(['ai', 'model'], ai_model)
+        if repo_id:
+            self.__set_config_value(['repo', 'id'], repo_id)
+
+    def __set_config_value(self, path, value):
+        """
+        Private method to set a value in the ConfigManager's self.__config dictionary
+        using a list of keys as the path.
+
+        Creates nested dictionaries if necessary.
 
         Args:
-            cli_args (dict): A dictionary of command-line arguments where keys match
-                             the config keys.
+            path (list): A list of keys representing the path to the target value.
+            value: The value to set at the specified path.
         """
-        if "ai_model" in cli_args and cli_args["ai_model"] is not None:
-            self.config['ai']['model'] = cli_args['ai_model']
-        if "repo_id" in cli_args and cli_args['repo_id'] is not None:
-            self.config['repo']['id'] = cli_args['repo_id']
-
-
-    def validate_config(self, config, schema, stage):
-        """
-        Validate the current configuration using JSON Schema.
-
-        Args:
-            config (dict): Configuration to validate.
-            schema (dict): One of yaml or final JSON schema dictionaries.
-            stage (str): Describes the stage at which validation is being performed.
-        """
-        try:
-            validate(instance=config, schema=schema)
-            self.log_manager.debug(f"{stage} configuration is valid.")
-        except ValidationError as e:
-            self.log_manager.error(
-                f"{stage} configuration validation error: {e.message}",
-            )
-            raise ValueError(f"{stage} configuration validation failed: {e.message}")
-
-    def get_config(self):
-        """
-        Get the current configuration dictionary.
-
-        Returns:
-            dict: The current configuration settings.
-        """
-        return self.config
+        config_dict = self.__config
+        for key in path[:-1]:
+            config_dict = config_dict.setdefault(key, {})
+        if value is not None:
+            config_dict[path[-1]] = value

@@ -42,20 +42,19 @@ class LogManager:
             rotation (str, optional): Log rotation configuration for the log file
                 (default: '10 MB').
         """
-        self.level = level
-        self._sink = sink  # Use _ for private attributes
-        self._rotation = rotation
-        self._serialize = serialize
+        self.__sink = sink
+        self.__rotation = rotation
+        self.__serialize = serialize
+        self.__level = level
 
-        if self._sink:
+        if self.__sink:
             logger.add(
-                sink=self._sink,
-                level=self.level,
-                rotation=self._rotation,
-                serialize=self._serialize,
+                sink=self.__sink,
+                level=self.__level,
+                rotation=self.__rotation,
+                serialize=self.__serialize,
                 colorize=False,
             )
-
         logger.info("LogManager activated.", extra=self.get_config(), event="startup")
 
     def get_config(self):
@@ -64,9 +63,9 @@ class LogManager:
         """
         return {
             "level": self.level,
-            "sink": self._sink,
-            "rotation": self._rotation,
-            "serialize": self._serialize,
+            "sink": self.__sink,
+            "rotation": self.__rotation,
+            "serialize": self.__serialize,
         }
 
     def debug(self, message, *args, **kwargs):

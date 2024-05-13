@@ -46,7 +46,7 @@ from steno.managers.log import LogManager
 # from steno.managers.transcript.github import GitHubTranscriptManager
 
 
-@logger.catch
+#@logger.catch
 @click.command()
 @click.option(
     "--config-path",
@@ -97,11 +97,10 @@ from steno.managers.log import LogManager
         "(e.g., 'username/repository')."
     ),
 )
-def main(config_path, log_path, log_level, log_rotation, ai_model, repo_id):
+@click.pass_context
+def main(ctx, log_path, log_level, log_rotation):
     # Initialize LogManager
     log_manager = LogManager(sink=log_path, level=log_level, rotation=log_rotation)
-    log_manager.debug("Application started.", event="startup")
-    log_manager.debug(f"Log level set to {log_level}")
 
     # Initialize ConfigManager
     #
@@ -113,27 +112,15 @@ def main(config_path, log_path, log_level, log_rotation, ai_model, repo_id):
     #
     # NOTE: All secrets MUST be in the config file as they will not be loaded from
     #       elsewhere due to security concerns.
-    config_manager = ConfigManager(log_manager)
-    config_manager.load_yaml_and_validate(config_path)
-    config_manager.load_env_vars()
-    cli_args = {
-        "ai": {
-            "model": ai_model,
-        },
-        "repo": {
-            "id": repo_id,
-        },
-    }
-    config_manager.integrate_and_validate_all_configs(cli_args)
-    config = config_manager.get_config()  # Returns the final version of the config.
-    log_manager.debug("ConfigManager activated.", extra=config, event="startup")
+    config_manager = ConfigManager(ctx, log_manager)
+    config_manager.get_config()  # Returns the final version of the config.
 
     # Initialize TranscriptManager
-    # transcript_manager = GitHubTranscriptManager(
-    #    log_manager=log_manager,
-    #    repo=config["repo"]["id"],
-    #    token=config["repo"]["token"],
-    # )
+    transcript_manager = GitHubTranscriptManager(
+       log_manager=log_manager,
+       repo=config["repo"]["id"],
+       token=config["repo"]["token"],
+    )
 
     # Handle the user's AI selection.
     try:
