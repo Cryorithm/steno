@@ -130,13 +130,12 @@ class ConfigManager:
             '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
         )
 
-    def __load_yaml(self, path):
+    def __load_yaml(self):
         """
-        Load configuration settings from a YAML file.
-
-        Args:
-            path (str): The path to the YAML file to be loaded.
+        Load configuration settings from the YAML file pointed to by 'config_path'
+        in the application context.
         """
+        path = self.ctx.get('config_path')
         resolved_path = Path(path).expanduser()
         try:
             with resolved_path.open("r") as f:
